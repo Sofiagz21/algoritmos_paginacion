@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Algoritmo de Paginación LRU</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <h1>Algoritmo de Paginación LRU</h1>
+  <table>
+    <tr>
+      <th>Tiempo</th>
+      <th>Referencia</th>
+      <th>Marcos</th>
+      <th>Fallos</th>
+    </tr>
+  </table>
+
+  <div class="performance">
+    <p>Rendimiento: <span id="performanceValue">0%</span></p>
+    <p>Fallos Totales: <span id="totalFaults">0</span></p>
+    <p>Número de Referencias: <span id="totalReferences">0</span></p>
+  </div>
+
+  <script>
+    // Variables
+    const pageSize = 4; // Tamaño de la memoria
+    const referenceString = [2, 3, 2, 1, 5, 2, 4, 5, 3, 2, 5]; // Referencias de página
+    const table = document.querySelector('table');
+    const performanceValue = document.getElementById('performanceValue');
+    const totalFaults = document.getElementById('totalFaults');
+    const totalReferences = document.getElementById('totalReferences');
+    let memory = [];
+    let pageFaults = 0;
+    let totalPageReferences = 0;
+    let rowIndex = 0;
+
+    // Función para agregar una fila a la tabla
+    function addTableRow(time, reference, isPageFault) {
+      const row = table.insertRow(-1);
+      const cell1 = row.insertCell(0);
+      const cell2 = row.insertCell(1);
+      const cell3 = row.insertCell(2);
+      const cell4 = row.insertCell(3);
+
+      cell1.textContent = time;
+      cell2.textContent = reference;
+      cell3.textContent = memory.join(', ');
+      cell4.innerHTML = isPageFault ? '<span class="page-fault">x</span>' : '';
+
+      if (isPageFault) {
+        cell4.classList.add('page-fault');
+        pageFaults++;
+      }
+    }
+
+    // Función para actualizar el rendimiento y los totales
+    function updatePerformance() {
+      const percentage = ((totalPageReferences - pageFaults) / totalPageReferences) * 100;
+      performanceValue.textContent = percentage.toFixed(2) + "%";
+      totalFaults.textContent = pageFaults;
+      totalReferences.textContent = totalPageReferences;
+    }
+
+    // Función para encontrar el índice del elemento menos recientemente usado en la memoria
+    function findLRUIndex(memory, referenceString, currentIndex) {
+      const pageIndices = new Map();
+      
+      for (let i = 0; i < currentIndex; i++) {
+        if (memory.includes(referenceString[i])) {
+          pageIndices.set(referenceString[i], i);
+        }
+      }
+
+      const leastRecentlyUsed = [...pageIndices.values()].sort((a, b) => a - b)[0];
+      return memory.indexOf(referenceString[leastRecentlyUsed]);
+    }
+
+    // Función para ejecutar el algoritmo con animación
+    function runAlgorithm() {
+      if (rowIndex < referenceString.length) {
+        const reference = referenceString[rowIndex];
+
+        if (!memory.includes(reference)) {
+          if (memory.length === pageSize) {
+            const indexToRemove = findLRUIndex(memory, referenceString, rowIndex);
+            memory[indexToRemove] = reference;
+            addTableRow(rowIndex, reference, true);
+          } else {
+            memory.push(reference);
+            addTableRow(rowIndex, reference, true);
+          }
+        } else {
+          addTableRow(rowIndex, reference, false);
+        }
+
+        rowIndex++;
+        totalPageReferences++;
+        updatePerformance();
+
+        // Hacer scroll hacia abajo para mostrar la fila agregada
+        table.parentElement.scrollTop = table.scrollHeight;
+
+        // Ejecutar la función nuevamente después de un retraso
+        setTimeout(runAlgorithm, 1000); // Cambia el valor del retraso según tu preferencia
+      }
+    }
+
+    // Iniciar la ejecución del algoritmo
+    runAlgorithm();
+  </script>
+</body>
+</html>
